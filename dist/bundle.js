@@ -96,6 +96,22 @@ function GetCode(id) {
     }
     return theSource;
 }
+var points = [0, 0, 1, 1, 0, 1, 1, 0];
+function MouseEventHandler(e, gl, canvas, position) {
+    var x = e.clientX;
+    var y = e.clientY;
+    var rect = e.target.getBoundingClientRect();
+    x = ((x - rect.left) - canvas.width / 2) / (canvas.width / 2);
+    y = (canvas.height / 2 - (y - rect.top)) / (canvas.height / 2);
+    points.push(x);
+    points.push(y);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    var len = points.length;
+    for (var i = 0; i < len; i += 2) {
+        gl.vertexAttrib3f(position, points[i], points[i + 1], 0.0);
+        gl.drawArrays(gl.POINTS, 0, 1);
+    }
+}
 window.addEventListener("DOMContentLoaded", function () {
     var canvas_elem = document.getElementById("glcanvas");
     gl = canvas_elem.getContext('experimental-webgl');
@@ -105,10 +121,6 @@ window.addEventListener("DOMContentLoaded", function () {
     gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
-    var IndexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, IndexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
     var ColorBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, ColorBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
@@ -126,19 +138,16 @@ window.addEventListener("DOMContentLoaded", function () {
     gl.linkProgram(shaderProgram);
     gl.useProgram(shaderProgram);
     gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, IndexBuffer);
     var coord = gl.getAttribLocation(shaderProgram, "coordinates");
-    gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(coord);
     gl.bindBuffer(gl.ARRAY_BUFFER, ColorBuffer);
     var color = gl.getAttribLocation(shaderProgram, "color");
     gl.vertexAttribPointer(color, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(color);
-    var TX = 0.2, TY = 0.2, TZ = 0.0;
+    var TX = 0.0, TY = 0.0, TZ = 0.0;
     var translation = gl.getUniformLocation(shaderProgram, "translations");
     gl.uniform3f(translation, TX, TY, TZ);
     var transformMatrix = new Float32Array([
-        0.8, 0.0, 0.0,
+        1.0, 0.0, 0.0,
         0.0, 1.0, 0.0,
         0.0, 0.0, 1.0,
     ]);
@@ -148,7 +157,9 @@ window.addEventListener("DOMContentLoaded", function () {
     gl.enable(gl.DEPTH_TEST);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.viewport(0, 0, canvas_elem.width, canvas_elem.height);
-    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+    canvas_elem.addEventListener("click", function (e) {
+        MouseEventHandler(e, gl, canvas_elem, coord);
+    });
 });
 
 

@@ -43,8 +43,31 @@ function GetCode(id: string) {
     return theSource;
 }
 
+let points: number[] = [0, 0, 1, 1, 0,1, 1,0];
+
+function MouseEventHandler(e: MouseEvent, gl: WebGLRenderingContext, canvas: HTMLCanvasElement, position: number) {
+    let x = e.clientX;
+    let y = e.clientY;
+    let rect = (<HTMLElement>e.target).getBoundingClientRect();
+    x = ((x - rect.left) - canvas.width / 2) / (canvas.width / 2);
+    y = (canvas.height / 2 - (y - rect.top)) / (canvas.height / 2);
+
+    points.push(x); points.push(y);
+
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    let len = points.length;
+    for (let i = 0; i < len; i+=2) {
+        // console.log(points[i], points[i+1]);
+        gl.vertexAttrib3f(position, points[i], points[i+1], 0.0);
+
+        gl.drawArrays(gl.POINTS, 0, 1);
+    }
+}
+
 window.addEventListener("DOMContentLoaded", function() {
     const canvas_elem = <HTMLCanvasElement>document.getElementById("glcanvas");
+
     gl = canvas_elem.getContext('experimental-webgl');
     gl.clearColor(0.9, 0.9, 0.8, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -57,11 +80,11 @@ window.addEventListener("DOMContentLoaded", function() {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
-    let IndexBuffer = gl.createBuffer();
+    // let IndexBuffer = gl.createBuffer();
 
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, IndexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, IndexBuffer);
+    // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
     // Color buffer
 
@@ -98,13 +121,13 @@ window.addEventListener("DOMContentLoaded", function() {
     // Step 4
     gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
 
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, IndexBuffer);
+    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, IndexBuffer);
 
     let coord = gl.getAttribLocation(shaderProgram, "coordinates");
 
-    gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
+    // gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
 
-    gl.enableVertexAttribArray(coord);
+    // gl.enableVertexAttribArray(coord);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, ColorBuffer);
 
@@ -116,13 +139,19 @@ window.addEventListener("DOMContentLoaded", function() {
 
 
     // Translation
-    let TX = 0.2, TY = 0.2, TZ = 0.0;
+    // let TX = 0.2, TY = 0.2, TZ = 0.0;
+    let TX = 0.0, TY = 0.0, TZ = 0.0;
     let translation = gl.getUniformLocation(shaderProgram, "translations");
     gl.uniform3f(translation, TX, TY, TZ);
 
     // Transform
+    // let transformMatrix = new Float32Array([
+    //     0.8, 0.0, 0.0,
+    //     0.0, 1.0, 0.0,
+    //     0.0, 0.0, 1.0,
+    // ]);
     let transformMatrix = new Float32Array([
-        0.8, 0.0, 0.0,
+        1.0, 0.0, 0.0,
         0.0, 1.0, 0.0,
         0.0, 0.0, 1.0,
     ]);
@@ -142,5 +171,9 @@ window.addEventListener("DOMContentLoaded", function() {
 
     // gl.drawArrays(gl.TRIANGLES, 0, 3);
     // gl.drawArrays(gl.LINE_LOOP, 0, 3);
-    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+    // gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+
+    canvas_elem.addEventListener("click", (e) => {
+        MouseEventHandler(e, gl, canvas_elem, coord);
+    });
 });
