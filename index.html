@@ -20,26 +20,20 @@
     </script>-->
 
     <script id="shader-vs" type="x-shader/x-vertex">
-        attribute vec3 coordinates;
-        attribute vec3 color;
-        uniform vec3 translations;
-        uniform mat3 u_xformMatrix;
-        varying vec3 vColor;
+        attribute vec4 a_Position;
+        uniform mat4 u_ModelMatrix;
 
         void main(void) {
-            gl_Position = vec4((coordinates + translations) * u_xformMatrix, 1.0);
-            gl_PointSize = 10.0;
-            vColor = color;
+            gl_Position = u_ModelMatrix * a_Position;
         }
     </script>
 
     <!-- Fragment shader program -->
     <script id="shader-fs" type="x-shader/x-fragment">
       precision mediump float;
-      varying vec3 vColor;
 
       void main(void) {
-          gl_FragColor = vec4(vColor, 1.);
+          gl_FragColor = vec4(0.5, 0.5, 0.5, 1.);
       }
     </script>
   </head>

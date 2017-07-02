@@ -2,18 +2,10 @@
 let gl: WebGLRenderingContext;
 
 let vertices = [
-   -0.5,0.5,0.0,
-   -0.5,-0.5,0.0,
-   0.5,-0.5,0.0,
-   0.5,0.5,0.0 
+   -0.5,0.5,0.0, 1.0,
+   -0.5,-0.5,0.0, 1.0,
+   0.5,-0.5,0.0, 1.0,
 ];
-
-let colors = [
-    0,0,1,
-    1,0,0,
-    0,1,0,
-    1,0,1,
-]
 
 let indices = [3,2,1,3,1,0];
 
@@ -43,7 +35,7 @@ function GetCode(id: string) {
     return theSource;
 }
 
-let points: number[] = [0, 0, 1, 1, 0,1, 1,0];
+let points: number[] = [0, 0, 0.5, 0.5, -0.5 , 0];
 
 function MouseEventHandler(e: MouseEvent, gl: WebGLRenderingContext, canvas: HTMLCanvasElement, position: number) {
     let x = e.clientX;
@@ -65,6 +57,20 @@ function MouseEventHandler(e: MouseEvent, gl: WebGLRenderingContext, canvas: HTM
     }
 }
 
+let ANGLE = 20;
+
+function GetTransformMatrix(angle: number) {
+    let radian = Math.PI * angle / 180.0;
+    let cosB = Math.cos(radian),
+        sinB = Math.sin(radian);
+    return new Float32Array([
+        cosB,  sinB, 0.0, 0.0,
+        -sinB, cosB, 0.0, 0.0,
+        0.0,   0.0,  1.0, 0.0,
+        0.0,   0.0,  0.0, 1.0,
+    ]);
+}
+
 window.addEventListener("DOMContentLoaded", function() {
     const canvas_elem = <HTMLCanvasElement>document.getElementById("glcanvas");
 
@@ -79,18 +85,6 @@ window.addEventListener("DOMContentLoaded", function() {
     gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-    // let IndexBuffer = gl.createBuffer();
-
-    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, IndexBuffer);
-    // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-
-    // Color buffer
-
-    let ColorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, ColorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
 
     // Compile shader program
 
@@ -123,57 +117,64 @@ window.addEventListener("DOMContentLoaded", function() {
 
     // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, IndexBuffer);
 
-    let coord = gl.getAttribLocation(shaderProgram, "coordinates");
-
-    // gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
-
-    // gl.enableVertexAttribArray(coord);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, ColorBuffer);
-
-    let color = gl.getAttribLocation(shaderProgram, "color");
-
-    gl.vertexAttribPointer(color, 3, gl.FLOAT, false, 0, 0);
-
-    gl.enableVertexAttribArray(color);
-
-
-    // Translation
-    // let TX = 0.2, TY = 0.2, TZ = 0.0;
-    let TX = 0.0, TY = 0.0, TZ = 0.0;
-    let translation = gl.getUniformLocation(shaderProgram, "translations");
-    gl.uniform3f(translation, TX, TY, TZ);
+    let coord = gl.getAttribLocation(shaderProgram, "a_Position");
+    gl.vertexAttribPointer(coord, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(coord);
 
     // Transform
-    // let transformMatrix = new Float32Array([
-    //     0.8, 0.0, 0.0,
-    //     0.0, 1.0, 0.0,
-    //     0.0, 0.0, 1.0,
-    // ]);
+    let radian = Math.PI * (ANGLE + 30) / 180.0;
+    let cosB = Math.cos(radian),
+        sinB = Math.sin(radian);
     let transformMatrix = new Float32Array([
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0,
+        cosB,  sinB, 0.0, 0.0,
+        -sinB, cosB, 0.0, 0.0,
+        0.0,   0.0,  1.0, 0.0,
+        0.0,   0.0,  0.0, 1.0,
     ]);
 
-    let u_xformMatrix = gl.getUniformLocation(shaderProgram, "u_xformMatrix");
-    gl.uniformMatrix3fv(u_xformMatrix, false, transformMatrix);
+    let u_ModelMatrix = gl.getUniformLocation(shaderProgram, "u_ModelMatrix");
+    gl.uniformMatrix4fv(u_ModelMatrix, false, transformMatrix);
 
     //  Step 5
 
-    gl.clearColor(0.5, 0.5, 0.5, 0.9);
-
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
-
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
     gl.viewport(0, 0, canvas_elem.width, canvas_elem.height);
 
-    // gl.drawArrays(gl.TRIANGLES, 0, 3);
     // gl.drawArrays(gl.LINE_LOOP, 0, 3);
     // gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+    // let len = points.length;
+    // for (let i = 0; i < len; i+=2) {
+    //     // console.log(points[i], points[i+1]);
+    //     gl.vertexAttrib4f(coord, points[i], points[i+1], 0.0, 1.0);
 
-    canvas_elem.addEventListener("click", (e) => {
-        MouseEventHandler(e, gl, canvas_elem, coord);
-    });
+    //     gl.drawArrays(gl.POINTS, 0, 1);
+    // }
+
+    // canvas_elem.addEventListener("click", (e) => {
+    //     MouseEventHandler(e, gl, canvas_elem, coord);
+    // });
+
+    let last_time = new Date();
+    let ANGLE_SPEED = 25;
+    function tick() {
+        let current = new Date();
+        let delta = (current.getTime() - last_time.getTime()) / 1000.0;
+        last_time = current;
+        ANGLE = (ANGLE + ANGLE_SPEED * delta) % 360;
+
+        let tranform_matrix = GetTransformMatrix(ANGLE);
+
+        gl.uniformMatrix4fv(u_ModelMatrix, false, tranform_matrix);
+
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        requestAnimationFrame(tick);
+    }
+
+    tick();
+
 });
